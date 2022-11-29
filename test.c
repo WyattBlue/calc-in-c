@@ -109,6 +109,21 @@ int factor(){
     return value; 
 }
 
+int term(){
+    int result = factor();
+
+    while (current_token.type == MUL || current_token.type == DIV){
+        if (current_token.type == MUL){
+            eat(MUL);
+            result *= factor();
+        } else if (current_token.type == DIV){
+            eat(DIV);
+            result /= factor();
+        }
+    }
+    return result;
+}
+
 
 int expr(){
     text_len = strlen(text);
@@ -116,16 +131,14 @@ int expr(){
     current_char = text[pos];
     current_token = get_next_token();
 
-
-    //
-    int result = factor();
-    while (current_token.type == MUL || current_token.type == DIV){
-        if (current_token.type == MUL) {
-            eat(MUL);
-            result *= factor();
-        } else if (current_token.type == DIV) {
-            eat(DIV);
-            result /= factor();
+    int result = term();
+    while (current_token.type == PLUS || current_token.type == MINUS){
+        if (current_token.type == PLUS) {
+            eat(PLUS);
+            result += term();
+        } else if (current_token.type == MINUS) {
+            eat(MINUS);
+            result -= term();
         }
     }
     return result;
