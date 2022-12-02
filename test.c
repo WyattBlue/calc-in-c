@@ -6,7 +6,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-enum type{NONE, INTEGER, PLUS, MINUS, MUL, DIV, MEOF};
+enum type{NONE, INTEGER, PLUS, MINUS, MUL, DIV, LPAREN, RPAREN, MEOF};
 
 typedef struct {
   unsigned int type;
@@ -16,8 +16,8 @@ typedef struct {
 unsigned int pos;
 char *text;
 unsigned int text_len;
-token current_token;
 char current_char;
+token current_token;
 
 void advance(){
     pos++;
@@ -87,12 +87,26 @@ token get_next_token(){
             token token = {DIV, 0};
             return token;
         }
+        if (current_char == '(') {
+            advance();
+            token token = {LPAREN, 0};
+            return token;
+        }
+        if (current_char == ')') {
+            advance();
+            token token = {RPAREN, 0};
+            return token;
+        }
+        
         fprintf(stderr, "Bad character: %c", current_char);
         exit(1);
     }
     token token = {MEOF, 0};
     return token;
 }
+
+// Interpreter
+int expr(void);
 
 void eat(unsigned int type){
     if (current_token.type == type){
@@ -104,9 +118,15 @@ void eat(unsigned int type){
 }
 
 int factor(){
-    int value = current_token.value;
-    eat(INTEGER);
-    return value; 
+    token token = current_token;
+    if (token.type == INTEGER){
+        eat(INTEGER);
+        return token.value;
+    }
+    eat(LPAREN);
+    int result = expr();
+    eat(RPAREN);
+    return result;
 }
 
 int term(){
@@ -124,13 +144,7 @@ int term(){
     return result;
 }
 
-
 int expr(){
-    text_len = strlen(text);
-    pos = 0;
-    current_char = text[pos];
-    current_token = get_next_token();
-
     int result = term();
     while (current_token.type == PLUS || current_token.type == MINUS){
         if (current_token.type == PLUS) {
@@ -144,12 +158,21 @@ int expr(){
     return result;
 }
 
+int my_init(){
+    text_len = strlen(text);
+    pos = 0;
+    current_char = text[pos];
+    current_token = get_next_token();
+    return expr();
+}
+
+
 int main(){
     printf("C test program, 2022\n");
     while (1) {
         text = readline("> ");
         add_history(text);
-        printf("%d\n", expr());
+        printf("%d\n", my_init());
     }
     return 0;
 } 
