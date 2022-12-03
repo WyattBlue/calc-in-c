@@ -2,17 +2,19 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <setjmp.h>
 
 #include <readline/readline.h>
 #include <readline/history.h>
 
-enum type{NONE, INTEGER, PLUS, MINUS, MUL, DIV, LPAREN, RPAREN, MEOF};
+enum type{INTEGER, PLUS, MINUS, MUL, DIV, LPAREN, RPAREN, TOK_EOF};
 
 typedef struct {
   unsigned int type;
   int value;
 } token;
 
+jmp_buf buf;
 unsigned int pos;
 char *text;
 unsigned int text_len;
@@ -41,6 +43,10 @@ int integer(){
 
     i = 0;
     while (current_char != 0 && isdigit(current_char)){
+        if (i > 8) {
+            fprintf(stderr, "Number too big\n");
+            longjmp(buf, 1);
+        }
         nums[i] = current_char - 48;
         advance();
         i++;
@@ -64,45 +70,37 @@ token get_next_token(){
             continue;
         }
         if (isdigit(current_char)) {
-            token token = {INTEGER, integer()};
-            return token; 
+            return (token){INTEGER, integer()};
         }
         if (current_char == '+') {
             advance();
-            token token = {PLUS, 0};
-            return token;
+            return (token){PLUS, 0};
         }
         if (current_char == '-') {
             advance();
-            token token = {MINUS, 0};
-            return token;
+            return (token){MINUS, 0};
         }
         if (current_char == '*') {
             advance();
-            token token = {MUL, 0};
-            return token;
+            return (token){MUL, 0};
         }
         if (current_char == '/') {
             advance();
-            token token = {DIV, 0};
-            return token;
+            return (token){DIV, 0};
         }
         if (current_char == '(') {
             advance();
-            token token = {LPAREN, 0};
-            return token;
+            return (token){LPAREN, 0};
         }
         if (current_char == ')') {
             advance();
-            token token = {RPAREN, 0};
-            return token;
+            return (token){RPAREN, 0};
         }
         
-        fprintf(stderr, "Bad character: %c", current_char);
-        exit(1);
+        fprintf(stderr, "Bad character: %c\n", current_char);
+        longjmp(buf, 1);
     }
-    token token = {MEOF, 0};
-    return token;
+    return (token){TOK_EOF, 0};
 }
 
 // Interpreter
@@ -112,8 +110,12 @@ void eat(unsigned int type){
     if (current_token.type == type){
         current_token = get_next_token();
     } else {
-        fprintf(stderr, "Expected %d, got %d", type, current_token.type);
-        exit(1);
+        if (type == RPAREN) {
+            fprintf(stderr, "Expected closing ')'\n");
+        } else {
+            fprintf(stderr, "Expected %d, got %d\n", type, current_token.type);
+        }
+        longjmp(buf, 1);
     }    
 }
 
@@ -168,11 +170,13 @@ int my_init(){
 
 
 int main(){
-    printf("C test program, 2022\n");
+    printf("C calc program, 2022\n");
     while (1) {
         text = readline("> ");
         add_history(text);
-        printf("%d\n", my_init());
+        if (setjmp(buf)) {} else {
+            printf("%d\n", my_init());
+        }
     }
     return 0;
 } 
