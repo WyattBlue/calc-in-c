@@ -16,17 +16,12 @@ typedef struct {
 jmp_buf buf;
 unsigned int pos;
 char *text;
-unsigned int text_len;
 char current_char;
 token current_token;
 
 void advance(){
     pos++;
-    if (pos > text_len - 1){
-        current_char = 0;
-    } else {
-        current_char = text[pos];
-    }
+    current_char = text[pos];
 }
 
 void skip_whitespace(){
@@ -160,7 +155,6 @@ int expr(){
 }
 
 int my_init(){
-    text_len = strlen(text);
     pos = 0;
     current_char = text[pos];
     current_token = get_next_token();
