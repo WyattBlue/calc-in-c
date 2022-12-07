@@ -13,15 +13,25 @@ typedef struct {
   int value;
 } token;
 
+
 jmp_buf buf;
 unsigned int pos;
 char *text;
 char current_char;
 token current_token;
 
+// Lexer
 void advance(){
     pos++;
     current_char = text[pos];
+}
+
+char peek(){
+    if (text[pos] == 0){
+        return 0;
+    } else {
+        return text[pos + 1];
+    }
 }
 
 void skip_whitespace(){
@@ -30,7 +40,7 @@ void skip_whitespace(){
     }
 }
 
-int integer(){
+int integer(int is_minus){
     int nums[9];
     int i;
     for(i=0;i<9;i++){nums[i]=-1;}
@@ -54,7 +64,11 @@ int integer(){
             place *= 10;
         }
     }
-    return result;
+    if (is_minus){
+        return -result;
+    } else {
+        return result;
+    }
 }
 
 token get_next_token(){
@@ -64,15 +78,25 @@ token get_next_token(){
             continue;
         }
         if (isdigit(current_char)) {
-            return (token){INTEGER, integer()};
+            return (token){INTEGER, integer(0)};
         }
         if (current_char == '+') {
+            char peek_char = peek();
             advance();
-            return (token){PLUS, 0};
+            if (isdigit(peek_char)) {
+                return (token){INTEGER, integer(0)};
+            } else {
+                return (token){PLUS, 0};
+            }
         }
         if (current_char == '-') {
+            char peek_char = peek();
             advance();
-            return (token){MINUS, 0};
+            if (isdigit(peek_char)) {
+                return (token){INTEGER, integer(1)};
+            } else {
+                return (token){MINUS, 0};
+            }
         }
         if (current_char == '*') {
             advance();
@@ -167,7 +191,7 @@ int main(){
     while (1) {
         text = readline("> ");
         add_history(text);
-        if (setjmp(buf)) {} else {
+        if (setjmp(buf) == 0) {
             printf("%d\n", my_init());
         }
     }
