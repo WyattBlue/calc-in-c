@@ -14,11 +14,19 @@ typedef struct {
 } token;
 
 
+// typedef struct {
+//   token token;
+//   struct binop *left;
+//   struct binop *right;
+// } binop;
+
+
 jmp_buf buf;
 unsigned int pos;
 char *text;
 char current_char;
 token current_token;
+
 
 // Lexer
 void advance(){
@@ -71,6 +79,7 @@ int integer(int is_minus){
     }
 }
 
+// Parser
 token get_next_token(){
     while (current_char != 0){
         if (isspace(current_char)){
