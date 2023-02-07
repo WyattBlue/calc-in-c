@@ -13,20 +13,11 @@ typedef struct {
   int value;
 } token;
 
-
-// typedef struct {
-//   token token;
-//   struct binop *left;
-//   struct binop *right;
-// } binop;
-
-
 jmp_buf buf;
 unsigned int pos;
 char *text;
 char current_char;
 token current_token;
-
 
 // Lexer
 void advance(){
@@ -196,7 +187,7 @@ int my_init(){
 
 
 int main(){
-    printf("C calc program, 2022\n");
+    printf("C-Calc 2023\n");
     while (1) {
         text = readline("> ");
         add_history(text);
